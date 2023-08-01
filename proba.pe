@@ -1,0 +1,11 @@
+STRING S;
+
+BEGIN { PUT('Kezdjük'); }
+
+S := '';
+S := S + 'A';
+S := S + 'B';
+# S := STRCAT (S,'B');
+# S := STRCAT (S,'R');
+
+END { S := ''; }

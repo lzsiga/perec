@@ -1,0 +1,14 @@
+# PINC.PE
+
+STRING S;
+
+BEGIN {
+    S := S + 'A';
+    PUT ('S := S+"A" UTAN S=',S);
+    S := S + 'B';
+    PUT ('S := S+"B" UTAN S=',S);
+    S += 'C';
+    PUT ('S += "C" UTAN S=',S);
+    S += 'D';
+    PUT ('S += "D" UTAN S=',S);
+}

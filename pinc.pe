@@ -1,0 +1,18 @@
+# PINC.PE
+
+NUMBER I,J;
+
+BEGIN {
+#   J := 0;
+    J := I++;
+    PUT ('J=I++ UTAN J=',J,' I=',I);
+    J := ++I;
+    PUT ('J=++I UTAN J=',J,' I=',I);
+    I += 2;
+    PUT ('I+=2 UTAN J=',J,' I=',I);
+    J -= 2;
+    PUT ('J-=2 UTAN J=',J,' I=',I);
+    I += J += 2;
+    PUT ('I += J += 2 UTAN J=',J,' I=',I);
+}
+1;

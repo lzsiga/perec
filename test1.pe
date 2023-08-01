@@ -1,0 +1,15 @@
+NUMBER FILE;
+STRING S;
+
+BEGIN {
+    FILE := OPENI ('test1.pe');
+
+    PUT ('Valami');
+
+    S:= GET (FILE);
+    WHILE (! ERR (FILE)) {
+	PUT (S);
+	S:= GET (FILE);
+    }
+    CLOSE (FILE);
+}

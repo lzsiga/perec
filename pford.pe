@@ -1,0 +1,15 @@
+# pford.pe
+
+STRING S;
+NUMBER I;
+
+S:='';
+FOR (I:=1; I<=INPLEN; ++I) {
+    S += [INPLEN+1-I,1];
+}
+FPUT (1, S);
+
+END { S:=''; 
+     PUT ('DATE=',DATE());
+     PUT ('DATETIME=',DATETIME());
+    }
