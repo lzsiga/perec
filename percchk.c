@@ -36,7 +36,7 @@ static int FunCheck (Function *fun, const Code *parms, int *ptype)
 		argtype != P_ANY) {
 		fprintf (stderr, "wrong type in arg #%d"
 			 " function %.*s\n",
-			 argc+1, fun->name.len, fun->name.ptr);
+			 argc+1, (int)fun->name.len, fun->name.ptr);
 		rc = -1;
 	    }
 	}

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
+#include <time.h>
 
 #include "a_mvcl.h"
 #include "defs.h"

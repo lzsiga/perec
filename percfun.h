@@ -3,7 +3,7 @@
 #ifndef PEREC_H
 #define PEREC_H
 
-#include "buffer.h"
+#include "buffdata.h"
 
 #define P_AND 1
 #define P_OR  2

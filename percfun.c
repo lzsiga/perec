@@ -5,8 +5,9 @@
 
 #include "defs.h"
 #include "perec.h"
+#include "buffdata.h"
+
 struct RealFun;
-struct BuffData;
 #define BABITED_OBJECT struct RealFun
 #define BABIT_KEY      struct BuffData
 #include "babit.h"
@@ -16,8 +17,8 @@ typedef struct RealFun {
     BabitConnector bc;
 } RealFun;
 
-static int VCmpFun (const RealFun *obj1, const RealFun *obj2);
-static int VFndFun (const BuffData *key, const RealFun *obj2);
+static int VCmpFun (const RealFun *obj1, const RealFun *obj2, BABIT_EXTRAPAR unused);
+static int VFndFun (const BuffData *key, const RealFun *obj2, BABIT_EXTRAPAR unused);
 
 static BABIT_ROOT root = 0;  /* ures fa */
 
@@ -25,14 +26,15 @@ static BabitControlBlock bcb = {
     0,
     offsetof (RealFun, bc),
     VCmpFun,
-    VFndFun
+    VFndFun,
+    (BABIT_EXTRAPAR)0
 };
 
 Function *FunFind (const BuffData *name)
 {
     RealFun *r;
 
-    r = BabitFind (&root, name, &bcb);
+    r = BabitFindU (&root, name, &bcb, 0);
     return &r->f;
 }
 
@@ -42,7 +44,7 @@ Function *FunNew (const BuffData *name)
 
     r = (RealFun *)ecalloc (sizeof (RealFun), 1);
     r->f.name = *name;
-    r2 = BabitInsert (&root, r, &bcb);
+    r2 = BabitInsertU (&root, r, &bcb, 0);
     if (r2) { /* already exists */
 	free (r);
 	return NULL;
@@ -51,18 +53,20 @@ Function *FunNew (const BuffData *name)
     }
 }
 
-static int VCmpFun (const RealFun *obj1, const RealFun *obj2)
+static int VCmpFun (const RealFun *obj1, const RealFun *obj2, BABIT_EXTRAPAR unused)
 {
     int rc;
 
-    rc = BuffDataCmp  (&obj1->f.name, &obj2->f.name);
+    (void)unused;
+    rc = BuffDataCmp ((ConstBuffData *)&obj1->f.name, (ConstBuffData *)&obj2->f.name);
     return rc;
 }
 
-static int VFndFun (const BuffData *key, const RealFun *obj2)
+static int VFndFun (const BuffData *key, const RealFun *obj2, BABIT_EXTRAPAR unused)
 {
     int rc;
 
-    rc = BuffDataCmp  (key, &obj2->f.name);
+    (void)unused;
+    rc = BuffDataCmp ((ConstBuffData *)key, (ConstBuffData *)&obj2->f.name);
     return rc;
 }

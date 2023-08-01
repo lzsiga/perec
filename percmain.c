@@ -6,19 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "usr_stxt.h"
 #include "buffdata.h"
 #include "defs.h"
 #include "a_value.h"
 #include "szio.h"
-#include "arghack.h"
 #include "tilog.h"
 
 #include "perec.h"
-
-#if !defined (SIGINTR)
-    #define SIGINTR SIGINT   /* SIGINTR csak BS2000-ben van */
-#endif
 
 char *progname;
 
@@ -86,11 +80,7 @@ int main (int argc, char *argv[])
     Variable *vinput, *vinplen, *virecno;
     Variable *vbind;
     void (*oldh)(int);
-    define_usr_stxt_context (ctx);
 
-    usr_stxt (USR_STXT_INSTALL, &ctx);
-
-    arghack (argc, argv);
     progname = argv[0];
 
     var.sprg = "*SYSDTA";
@@ -215,7 +205,7 @@ OPTNOVAL:   fprintf (stderr, "option '%s' without value\n", argv[0]);
 	}
     }
 
-    oldh = signal (SIGINTR, IntrHandler);
+    oldh = signal (SIGINT, IntrHandler);
     while (! var.stop &&
 	   Szio (SZIO_GET | SZIO_DUMP, &var.szin,
 		 &var.irec.len, &var.irec.ptr) ==0) {
@@ -242,7 +232,7 @@ OPTNOVAL:   fprintf (stderr, "option '%s' without value\n", argv[0]);
 	    break;
 	}
     }
-    signal (SIGINTR, oldh);
+    signal (SIGINT, oldh);
     if (var.stop) {
 	    fprintf (stderr, "INTeRrupted after %ld record\n",
 		     var.irecno);
@@ -283,7 +273,6 @@ VEGE:
 
     if (!var.quiet) MemStat (1);
 
-    usr_stxt (USR_STXT_REMOVE, &ctx);
     return 0;
 }
 

@@ -19,7 +19,7 @@ static int ValueCmp (const Value *lval, const Value *rval)
 	    cmp = lval->u.b.len > rval->u.b.len ? 1 :
 		  lval->u.b.len < rval->u.b.len ? -1 : 0;
 	} else {
-	    cmp = BuffDataCmp (&lval->u.b, &rval->u.b);
+	    cmp = BuffDataCmp ((ConstBuffData *)&lval->u.b, (ConstBuffData *)&rval->u.b);
 	}
     }
     return cmp;

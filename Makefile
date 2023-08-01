@@ -1,9 +1,8 @@
 CC = gcc
-CFLAGS   += ${COMMON_CFLAGS32}   -g -W -Wall -pedantic
-CXXFLAGS += ${COMMON_CXXFLAGS32} -g -W -Wall -pedantic
-CPPFLAGS += ${COMMON_CPPFLAGS}   -D __UNIX__ -Idevel/src
+CFLAGS   += -g -W -Wall -pedantic
+CPPFLAGS += -D __UNIX__ -Ilib
 YFLAGS = -d -v
-LDFLAGS  += ${COMMON_LDFLAGS32} -g -ldl
+LDFLAGS  += -g -ldl
 DIR = perec
 TGZ = $(DIR).tgz
 HTGZ = $(DIR).host.tgz
@@ -11,7 +10,7 @@ TARS = *.y *.c *.h Makefile *.pe
 DIRTARS = $(foreach file,$(TARS),$(DIR)/$(file))
 
 all: perec
- 
+
 clean:
 	rm -f percpars.c *.o 2>/dev/null | true
 
@@ -43,10 +42,11 @@ nodebug:
 perecefence: LDFLAGS += -lefence
 perecefence: perec
 
+perec:  LDLIBS += -ldl
 perec:  percmain.o percpars.o perc1.o percvar.o \
  	percchk.o percstr.o percmem.o perccalc.o \
- 	percblt.o percfun.o devel/lib/devel.a
-	$(CC) $(LDFLAGS) -o $@ $^
+ 	percblt.o percfun.o
+	$(CC) $(LDFLAGS) -o $@ $^ lib/*.c ${LDLIBS}
 
 perec_ifcounter:  percmain.o percpars_ifcounter.o perc1.o percvar.o \
  	percchk.o percstr.o percmem.o perccalc.o \
