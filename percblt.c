@@ -11,7 +11,6 @@
 #include "strvaker.h"
 #include "a_value.h"
 #include "szio.h"
-#include "fcb.h"
 
 #include "perec.h"
 
@@ -33,8 +32,6 @@ StaticBD (Nget,    "GET");
 StaticBD (Nerr,    "ERR");
 StaticBD (Ndate,   "DATE");
 StaticBD (Ndatime, "DATETIME");
-StaticBD (Nfcboi,  "FCBOPENI");
-StaticBD (Nfcbgk,  "FCBGETKY");
 
 static int BLen    (Value *retval, int argc, Value *args);
 static int BStrPos (Value *retval, int argc, Value *args);
@@ -54,9 +51,6 @@ static int BGet    (Value *retval, int argc, Value *args);
 static int BErr    (Value *retval, int argc, Value *args);
 static int BDate   (Value *retval, int argc, Value *args);
 static int BDatime (Value *retval, int argc, Value *args);
-static int BFcbOI  (Value *retval, int argc, Value *args);
-#define    BFcbC   BClose
-static int BFcbGk  (Value *retval, int argc, Value *args);
 
 static VType TypeN [1]	 = {P_NUMBER};
 static VType TypeS [1]	 = {P_STRING};
@@ -166,9 +160,6 @@ void BltInit (void)
 
     Define (&Ndate,   P_STRING, BDate,	0, 0, 0, NULL);
     Define (&Ndatime, P_STRING, BDatime,0, 0, 0, NULL);
-
-    Define (&Nfcboi,  P_NUMBER, BFcbOI, 1, 1, 1, TypeS);
-    Define (&Nfcbgk,  P_STRING, BFcbGk, 2, 2, 2, TypeNS);
 }
 
 static int BLen (Value *retval, int argc __attribute__((unused)), Value *args)
@@ -582,17 +573,11 @@ typedef struct PFileComm {
 } PFileComm;
 
 #define PFILE_SZIO 0xcabad111
-#define PFILE_FCB  0xcabad112
 
 typedef struct PFile {
     PFileComm c;
     SZIO_FILE_ID id;
 } PFile;
-
-typedef struct PFileFcb {
-    PFileComm c;
-    FCB *fcb;
-} PFileFcb;
 
 static int BOpenI (Value *retval, int argc __attribute__((unused)), Value *args)
 {
@@ -633,12 +618,6 @@ static int BClose (Value *retval, int argc __attribute__((unused)), Value *args)
 	pfc->magic = 0;
 	free (pf);
 
-    } else if (pfc->magic==PFILE_FCB) {
-	PFileFcb *pf = (PFileFcb *)pfc;
-	rc = fcbClose (pf->fcb);
-	pfc->magic = 0;
-	free (pf);
-
     } else {
 	rc= 0;
     }
@@ -669,21 +648,6 @@ static int BGet (Value *retval, int argc __attribute__((unused)), Value *args)
 	pfc->lastrc = rc;
 	if (rc) reclen= 0;
 
-    } else if (pfc->magic == PFILE_FCB) {
-	PFileFcb *pf = (PFileFcb *)pfc;
-
-	recptr = fcbGet (pf->fcb, FCB_NOLOCK, NULL);
-
-	if (recptr) {
-	    recptr = fcbGetLn (pf->fcb, recptr, &reclen);
-	    pf->c.lastrc = 0;
-
-	} else {
-	    reclen = 0;
-	    if (fcbXITB == XITB_EOFADDR) pf->c.lastrc = 1;
-	    else			 pf->c.lastrc = -1;
-	}
-
     } else {
 	reclen= 0;
     }
@@ -713,8 +677,7 @@ static int BErr (Value *retval, int argc __attribute__((unused)), Value *args)
 
     pf = (PFileComm *)args[0].u.i;
     if (pf==(PFileComm *)-1 ||
-	(pf->magic != PFILE_SZIO &&
-	 pf->magic != PFILE_FCB)) rc = -1;
+	(pf->magic != PFILE_SZIO)) rc = -1;
     else rc = pf->lastrc;
 
     retval->vtype = P_NUMBER;
@@ -722,100 +685,6 @@ static int BErr (Value *retval, int argc __attribute__((unused)), Value *args)
 
     return 0;
 }
-
-static int BFcbOI (Value *retval, int argc __attribute__((unused)), Value *args)
-{
-    FCB *fcb;
-    PFileFcb *pf;
-    BuffData *bname;
-    char *cname=NULL;
-    fcb_struct fs;
-
-    bname = &args[0].u.b;
-    if (bname->len==0) {
-	pf = (PFileFcb *)-1;
-	goto RETURN;
-    }
-
-    cname= emalloc (bname->len + 1);
-    memcpy (cname, bname->ptr, bname->len);
-    cname[bname->len] = '\0';
-
-    memset (&fs, 0, sizeof (fs));
-    fs.fcbtype = FCB_OLD;
-    fs.openmode= FCB_INPUT;
-    fs.blksize = FCB_OLD;
-    fs.recform = FCB_OLD;
-    fs.recsize = FCB_OLD;
-    fs.keypos  = FCB_OLD;
-    fs.keylen  = FCB_OLD;
-    fs.dupeky  = FCB_NODUPEKY;
-    fs.sharupd = FCB_SHARUPD;
-    fs.ioreg   = FCB_IOREG;
-
-    fcb = fcbOpen (cname, &fs);
-
-    if (fcb) {
-	pf = emalloc (sizeof (PFileFcb));
-	pf->c.magic = PFILE_FCB;
-	pf->c.lastrc = 0;
-	pf->fcb = fcb;
-    } else {
-	pf = (PFileFcb *)-1;
-    }
-
-RETURN:
-    retval->vtype = P_NUMBER;
-    retval->u.i = (intptr_t)pf;
-
-    if (cname) efree (cname);
-    return 0;
-}
-
-static int BFcbGk (Value *retval, int argc __attribute__((unused)), Value *args)
-{
-    Memory *m;
-    PFileFcb *pf;
-    size_t reclen;
-    char *ptr, *recptr;
-    char key [256];
-
-    pf = (PFileFcb *)args[0].u.i;
-    if (pf==(PFileFcb *)-1 ||
-	pf->c.magic != PFILE_FCB) goto GETERR;
-
-    a_mvcl (sizeobj (key), args[1].u.b.len, args[1].u.b.ptr, ' ');
-
-    recptr = fcbGetky (pf->fcb, key, FCB_NOLOCK, NULL);
-
-    if (recptr) {
-	recptr = fcbGetLn (pf->fcb, recptr, &reclen);
-	pf->c.lastrc = 0;
-
-    } else {
-	reclen = 0;
-	if (fcbXITB == XITB_NOFIND) pf->c.lastrc = 1;
-	else			    pf->c.lastrc = -1;
-    }
-
-    if (reclen) {
-	m = MemGet (reclen);
-	ptr = MemAddr (m);
-	memcpy (ptr, recptr, reclen);
-	retval->vtype = P_STRING;
-	retval->u.b.len = reclen;
-	retval->u.b.ptr = ptr;
-	retval->mem = m;
-    } else {
-GETERR: retval->vtype = P_STRING;
-	retval->u.b.len = 0;
-	retval->u.b.ptr = NULL;
-	retval->mem = NULL;
-    }
-
-    return 0;
-}
-
 
 static int BDt (Value *retval, int argc __attribute__((unused)),
     Value *args __attribute__((unused)), int len)
