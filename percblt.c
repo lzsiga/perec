@@ -21,9 +21,9 @@ StaticBD (Nstrcat, "STRCAT");
 StaticBD (Nput,    "PUT");
 StaticBD (Nfput,   "FPUT");
 StaticBD (Nmatch,  "MATCH");
-StaticBD (Nvalue,  "VALUE");	/*  C'1000' --> 1000 */
+StaticBD (Nvalue,  "VALUE");    /*  C'1000' --> 1000 */
 StaticBD (Nbinval, "BINVALUE"); /*  X'03E8' --> 1000 */
-StaticBD (Nchar,   "CHAR");	/*  1000    --> C'1000' */
+StaticBD (Nchar,   "CHAR");     /*  1000    --> C'1000' */
 StaticBD (Nunpack, "UNPACK");
 StaticBD (Ntrim,   "TRIM");
 StaticBD (Nopeni,  "OPENI");
@@ -32,6 +32,7 @@ StaticBD (Nget,    "GET");
 StaticBD (Nerr,    "ERR");
 StaticBD (Ndate,   "DATE");
 StaticBD (Ndatime, "DATETIME");
+StaticBD (Nstrrev, "STRREV");
 
 static int BLen    (Value *retval, int argc, Value *args);
 static int BStrPos (Value *retval, int argc, Value *args);
@@ -51,6 +52,7 @@ static int BGet    (Value *retval, int argc, Value *args);
 static int BErr    (Value *retval, int argc, Value *args);
 static int BDate   (Value *retval, int argc, Value *args);
 static int BDatime (Value *retval, int argc, Value *args);
+static int BStrRev (Value *retval, int argc, Value *args);
 
 static VType TypeN [1]	 = {P_NUMBER};
 static VType TypeS [1]	 = {P_STRING};
@@ -157,6 +159,7 @@ void BltInit (void)
     Define (&Nclose,  P_NUMBER, BClose, 1, 1, 1, TypeN);
     Define (&Nget,    P_STRING, BGet,	1, 1, 1, TypeN);
     Define (&Nerr,    P_NUMBER, BErr,	1, 1, 1, TypeN);
+    Define (&Nstrrev, P_STRING, BStrRev,1, 1, 1, TypeS);
 
     Define (&Ndate,   P_STRING, BDate,	0, 0, 0, NULL);
     Define (&Ndatime, P_STRING, BDatime,0, 0, 0, NULL);
@@ -561,6 +564,42 @@ static int BTrim (Value *retval, int argc __attribute__((unused)), Value *args)
     retval->vtype = P_STRING;
     retval->u.b.len = len;
     retval->u.b.ptr = ptr;
+    retval->mem = args[0].mem;
+
+    MemUse (&retval->mem);
+    return 0;
+}
+
+static int BStrRev (Value *retval, int argc, Value *args)
+{
+    const char *ptr;
+    char *toptr;
+    int len, i;
+    Memory *m;
+
+    (void)argc;
+
+    ptr = args[0].u.b.ptr;
+    len = args[0].u.b.len;
+
+    if (len==0) {
+        retval->vtype = P_STRING;
+        retval->u.b.len = 0;
+        retval->u.b.ptr = "";
+        retval->mem = NULL;
+        return 0;
+    }
+
+    m = MemGet (len);
+    toptr = MemAddr (m);
+
+    for (i=0; i<len; ++i) {
+        toptr[len-1-i]= ptr[i];
+    }
+
+    retval->vtype = P_STRING;
+    retval->u.b.len = len;
+    retval->u.b.ptr = toptr;
     retval->mem = args[0].mem;
 
     MemUse (&retval->mem);
