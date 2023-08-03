@@ -1,11 +1,8 @@
 STRING S;
 
-BEGIN { PUT('Kezdjük'); }
+BEGIN { PUT('Start'); }
 
-S := '';
 S := S + 'A';
 S := S + 'B';
-# S := STRCAT (S,'B');
-# S := STRCAT (S,'R');
 
-END { S := ''; }
+END { PUT('End S=',S); }
