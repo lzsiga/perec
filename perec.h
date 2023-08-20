@@ -142,7 +142,8 @@ typedef struct Codes {
     Code *end;
 } Codes;
 
-extern int PercPars (SZIO_FILE_ID *id, Codes *c);
+int PercPars (SZIO_FILE_ID *id, Codes *c);
+int PercPars_Naive (SZIO_FILE_ID *id, Codes *c);
 
 extern int OutPut (int fileno, void *vrec);
 

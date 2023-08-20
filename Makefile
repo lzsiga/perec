@@ -45,7 +45,7 @@ perecefence: perec
 perec:  LDLIBS += -ldl
 perec:  percmain.o percpars.o perc1.o percvar.o \
  	percchk.o percstr.o percmem.o perccalc.o \
- 	percblt.o percfun.o
+ 	percblt.o percfun.o naive_parser.o
 	$(CC) $(LDFLAGS) -o $@ $^ lib/*.c ${LDLIBS}
 
 perec_ifcounter:  percmain.o percpars_ifcounter.o perc1.o percvar.o \

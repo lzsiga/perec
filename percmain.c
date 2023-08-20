@@ -41,6 +41,7 @@ static struct Vars {
     int debug;
     int stop;
     int quiet;
+    int naive_parser;
 } var;
 
 static void *GetPlugin (const BuffData *from, BuffData *name);
@@ -131,6 +132,12 @@ OPTBADVAL:	    fprintf (stderr, "Bad value '%s' for option '%s'\n"
 	    --argc;
 	    break;
 
+	case 'n': case 'N':
+	    if (strcasecmp (argv[0], "-naive-parser")==0) {
+		var.naive_parser= 1;
+		break;
+	    } else goto INVOPT;
+
 	case 'q': case 'Q':
 	    if (strcasecmp (argv[0], "-quiet")==0) {
 		var.quiet= 1;
@@ -162,7 +169,10 @@ OPTNOVAL:   fprintf (stderr, "option '%s' without value\n", argv[0]);
 
     Szio (SZIO_OPENI | SZIO_DUMP | SZIO_OPENFT_TEXT,
 	  &var.szprg, (int)strlen (var.sprg), var.sprg);
-    PercPars (&var.szprg, &p);
+
+    if (var.naive_parser) PercPars_Naive (&var.szprg, &p);
+    else                  PercPars       (&var.szprg, &p);
+
     Szio (SZIO_CLOSE, &var.szprg);
 
     if (!var.quiet) {
